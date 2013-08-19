@@ -4,7 +4,7 @@ Quick Perl programming for experienced lazy developers on small utilities. It wi
 
 Run Environment
 ---------------
-Tested in windowns.
+Tested in Perl 5.16 under Windows.
 
 Perl Installation
 -----------------
@@ -16,8 +16,11 @@ Module Management
 Perl is powerful only because there are lots of useful modules. They are free for you, so you must learn to download&install modules.
 
 Install cpanm to make installing other modules easier. You need to type these commands into a Terminal emulator (Mac OS X, Win32, X Windows/Linux)
+
     cpan App::cpanminus
-note: if cpan does not work, try cpan.bat Now install any module you can find.
+note: if cpan does not work, try cpan.bat  
+Now install any module you can find.
+
     cpanm Module::Name
 Reference: http://www.cpan.org/modules/INSTALL.html
 
