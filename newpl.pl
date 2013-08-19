@@ -1,12 +1,223 @@
-# Author: yingjie.liu
-# Date: 2009-10-14 星期三 
-use Email::MIME;
-use Email::Sender::Simple qw(sendmail);
+#!perl
+# Author: jackandking@gmail.com
+# DateTime: 2013-08-18 12:36:23
+# HomePage: https://github.com/jackandking/newpl
 
-if ( @ARGV == 0 ){
-  print "Usage: newp <filename>\n";
-	exit(1);
+our $__version__='0.1';
+
+'Contributors:
+    Yingjie.Liu@thomsonreuters.com
+';
+
+# Configuration Area Start for users of newpl
+our $_author_ = 'Yingjie.Liu@thomsonreuters.com';
+# Configuration Area End
+
+#our $_newpl_server_='newxx.sinaapp.com';
+our $_newpl_server_='localhost:8080';
+
+use  HTTP::Request::Common qw(POST);
+use LWP::UserAgent;
+
+
+our $header=q{#!perl
+# Author: %s
+# DateTime: %s
+# Generator: https://github.com/jackandking/newpl
+# Newpl Version: %s
+# Newpl ID: %s
+
+};
+
+our %sample_blocks =( 
+
+    '0' => 
+        ['Hello World',
+q@
+print "Hello:";
+my $world=<STDIN>;
+chomp($world);
+my $World='perl is case sensitive';
+print "Hello $world!\n";
+@],
+
+);
+
+sub write_sample_to_file{
+    my ($newpl_id, $samples, $filename)= @_;
+
+    my @id_list;
+    if(defined($samples)){ 
+        @id_list = split(//,$samples);
+    }else{
+        @id_list=keys %sample_blocks;
+    }
+    
+    my $file;
+    if ($filename){
+        open($file, ">$filename") or die("open failure");
+    }else{
+        $file=STDOUT;
+    }
+    
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+    my $dt=sprintf("%4d-%02d-%02d %02d:%02d:%02d",$year+1900,$mon+1,$mday,$hour,$min,$sec);
+    printf $file $header, $_author_, $dt, $__version__, $newpl_id ;
+    foreach my $i (@id_list){
+        if($sample_blocks{"$i"} eq undef){
+            print "invalid sample ID, ignore $i\n";
+            next;
+        }
+        print $file "\n";
+        print $file "=begin" if $options->comment;
+        print $file '#'.$sample_blocks{$i}[0];
+        print $file $sample_blocks{$i}[1];
+        print $file "=end" if $options->comment;
+        print $file "\n";
+    }
+    close($file) if $file != STDOUT;
 }
+
+sub list_sample(){
+    print "Here are the available samples:\n";
+    foreach my $i (sort(keys %sample_blocks)){
+        print "$i => $sample_blocks{$i}[0]\n";
+    }
+    exit;
+}
+
+sub get_lan_ip(){
+    use IO::Socket::INET;
+
+    my $sock = IO::Socket::INET->new(
+                       PeerAddr=> $_newpl_server_,
+                       PeerPort=> 80,
+                       Proto   => "tcp");
+    return $sock->sockhost;
+}
+
+sub submit_record(){
+    my ($what)=@_;
+    $newplid=0;
+    print("apply for newpl ID...") if !$options->quiet;
+    my $ua = LWP::UserAgent->new;
+    my $uri = "http://$_newpl_server_/newpl";
+    #my $req = HTTP::Request->new(POST => $uri);
+    my $req = POST($uri, ["which"=> $__version__, "where" => &get_lan_ip, "who" => $_author_, "what" => $what]);
+    #$req->content_type('application/x-www-form-urlencoded');
+    #my $params = '{"which": "'.$__version__.'", "where": "'.&get_lan_ip.'", "who": "'.$_author_.'", "what": "'.$what.'"}';
+    #print $params;
+    #$req->content($params);
+    my $resp = $ua->request($req);
+    if ($resp->is_success) {
+        my $message = $resp->decoded_content;
+        $newplid=$message;
+        print "Received reply: $message\n" if $options->debug;
+    } else {
+        if($options->debug){
+            print "HTTP POST error code: ", $resp->code, "\n";
+            print "HTTP POST error message: ", $resp->message, "\n";
+        }
+    }
+
+    if (!$options->quiet){
+        if ($newplid >0){ 
+            print "ok, got $newplid\n";
+        } else  {
+            print "ko, use 0\n"
+        }
+    }
+
+    return $newplid
+}
+ 
+sub upload_file{
+    use File::Slurp;
+    my ($filename)=@_;
+    die("error: $filename does not exist!") unless -e $filename;
+    open(my $file, "$filename") or die("open failure");
+    my $newplid=0;
+    while(my $line=<$file>){
+        if($line=~/# Newpl ID: (\d+)/){
+            $newplid=$1;
+            break;
+        }
+    }
+    close($file);
+    if("$newplid" eq "0"){
+        print "error: no valid newpl ID found for $filename\n";
+        exit;
+    }
+    print "uploading $filename(newplid=$newplid)...";
+    my $ua = LWP::UserAgent->new;
+    my $uri = "http://$_newpl_server_/newpl/upload";
+    my $content = read_file($filename);
+    my $req = POST($uri, ["filename"=> $filename, "content" => $content]);
+    my $resp = $ua->request($req);
+    if ($resp->is_success) {
+        my $message = $resp->decoded_content;
+        print "$message\n";
+    } else {
+        if($options->debug){
+            print "HTTP POST error code: ", $resp->code, "\n";
+        }
+        print "ko ", $resp->message, "\n";
+    }
+    exit
+}
+
+our $options;
+sub main(){
+    use Getopt::Long::Descriptive;
+
+    ($options, my $usage) = describe_options(
+        '%c %o <filename>',
+        [ 'help|h',       "show this help message and exit" ],
+        [ 'list|l', "list all the available samples." ],
+        [ 'samples|s=s', "select samples to include in the new file, e.g -s 123", {default=>''} ],
+        [ 'comment|c', "add samples as comment." ],
+        [ 'overwrite|o', "overwrite existing file." ],
+        [ 'quiet|q', "run in silent mode." ],
+        [ 'test|t', "run in test mode." ],
+        [ 'debug|d', "run in debug mode." ],
+        [],
+        [ 'upload|u=s',   "upload file to newpl server." ],
+        [ 'norecord|n',  "don't submit record to improve newpl" ],
+    );
+
+    print($usage->text), exit if $options->help;
+    &list_sample if $options->list;
+    &upload_file($options->upload) if $options->upload;
+
+    if (scalar(@ARGV)!= 1){
+        print "incorrect number of arguments, try -h\n";
+        exit;
+    }
+
+    $filename=$ARGV[0].'.pl';
+    if (!$options->overwrite and -e $filename){
+        print("error: $filename already exist!\n");
+        exit;
+    }
+
+    my $newpl_id=0;
+    if (!$options->test){
+        $newpl_id=&submit_record($options->samples);
+    }
+
+    &write_sample_to_file($newpl_id,
+                         #defined($options->samples)?$options->samples:'',
+                         $options->samples,
+                         $options->test ? undef : $filename);
+    print "generate $filename successfully.\n" if !$options->quiet;
+}
+
+
+=pod
+
+
+
+
 my $fn=$ARGV[0].".pl";
 if(-e "$fn") {
 	die("$fn exsit!\n");
@@ -89,3 +300,9 @@ my $message = Email::MIME->create(
 sendmail($message);
 
 print "$fn logged via email!\n"
+=cut
+
+unless(caller){
+    main();
+}
+
