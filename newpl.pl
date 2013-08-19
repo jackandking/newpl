@@ -102,12 +102,7 @@ sub submit_record(){
     print("apply for newpl ID...") if !$options->quiet;
     my $ua = LWP::UserAgent->new;
     my $uri = "http://$_newpl_server_/newpl";
-    #my $req = HTTP::Request->new(POST => $uri);
     my $req = POST($uri, ["which"=> $__version__, "where" => &get_lan_ip, "who" => $_author_, "what" => $what]);
-    #$req->content_type('application/x-www-form-urlencoded');
-    #my $params = '{"which": "'.$__version__.'", "where": "'.&get_lan_ip.'", "who": "'.$_author_.'", "what": "'.$what.'"}';
-    #print $params;
-    #$req->content($params);
     my $resp = $ua->request($req);
     if ($resp->is_success) {
         my $message = $resp->decoded_content;
@@ -157,6 +152,7 @@ sub upload_file{
     if ($resp->is_success) {
         my $message = $resp->decoded_content;
         print "$message\n";
+        print "weblink: http://$_newpl_server_/newpl/$newplid\n";
     } else {
         if($options->debug){
             print "HTTP POST error code: ", $resp->code, "\n";
