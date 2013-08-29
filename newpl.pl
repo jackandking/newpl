@@ -13,8 +13,8 @@ our $__version__='0.1';
 our $_author_ = 'Yingjie.Liu@thomsonreuters.com';
 # Configuration Area End
 
-#our $_newpl_server_='newxx.sinaapp.com';
-our $_newpl_server_='localhost:8080';
+our $_newpl_server_='newxx.sinaapp.com';
+#our $_newpl_server_='localhost:8080';
 
 use  HTTP::Request::Common qw(POST);
 use LWP::UserAgent;
@@ -86,23 +86,13 @@ sub list_sample(){
     exit;
 }
 
-sub get_lan_ip(){
-    use IO::Socket::INET;
-
-    my $sock = IO::Socket::INET->new(
-                       PeerAddr=> $_newpl_server_,
-                       PeerPort=> 80,
-                       Proto   => "tcp");
-    return $sock->sockhost;
-}
-
 sub submit_record(){
     my ($what)=@_;
     $newplid=0;
     print("apply for newpl ID...") if !$options->quiet;
     my $ua = LWP::UserAgent->new;
     my $uri = "http://$_newpl_server_/newpl";
-    my $req = POST($uri, ["which"=> $__version__, "where" => &get_lan_ip, "who" => $_author_, "what" => $what]);
+    my $req = POST($uri, ["which"=> $__version__, "who" => $_author_, "what" => $what]);
     my $resp = $ua->request($req);
     if ($resp->is_success) {
         my $message = $resp->decoded_content;
