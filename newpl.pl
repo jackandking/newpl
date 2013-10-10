@@ -2,8 +2,10 @@
 # Author: jackandking@gmail.com
 # DateTime: 2013-08-18 12:36:23
 # HomePage: https://github.com/jackandking/newpl
+# Change Log:
+# 2013-10-10 2:05:14 PM add read_file so that upload can work; add proxy(opt -p) support.
 
-our $__version__='0.1';
+our $__version__='0.2';
 
 'Contributors:
     Yingjie.Liu@thomsonreuters.com
@@ -91,6 +93,8 @@ sub submit_record(){
     $newplid=0;
     print("apply for newpl ID...") if !$options->quiet;
     my $ua = LWP::UserAgent->new;
+    $ua->timeout(3);
+    $ua->proxy(['http']=>$options->proxy) if($options->proxy);
     my $uri = "http://$_newpl_server_/newpl";
     my $req = POST($uri, ["which"=> $__version__, "who" => $_author_, "what" => $what]);
     my $resp = $ua->request($req);
@@ -117,7 +121,7 @@ sub submit_record(){
 }
  
 sub upload_file{
-    use File::Slurp;
+    #use File::Slurp;
     my ($filename)=@_;
     die("error: $filename does not exist!") unless -e $filename;
     open(my $file, "$filename") or die("open failure");
@@ -135,6 +139,8 @@ sub upload_file{
     }
     print "uploading $filename(newplid=$newplid)...";
     my $ua = LWP::UserAgent->new;
+    $ua->timeout(10);
+    $ua->proxy(['http']=>$options->proxy) if($options->proxy);
     my $uri = "http://$_newpl_server_/newpl/upload";
     my $content = read_file($filename);
     my $req = POST($uri, ["filename"=> $filename, "content" => $content]);
@@ -150,6 +156,17 @@ sub upload_file{
         print "ko ", $resp->message, "\n";
     }
     exit
+}
+
+sub read_file(){
+    my ($a_filename)=@_;
+    my $l_cont= do {
+        local $/ = undef;
+        open my $fh, "<", $a_filename
+            or die "could not open $a_filename: $!";
+        <$fh>;
+    };
+    return $l_cont
 }
 
 our $options;
@@ -169,6 +186,7 @@ sub main(){
         [],
         [ 'upload|u=s',   "upload file to newpl server." ],
         [ 'norecord|n',  "don't submit record to improve newpl" ],
+        [ 'proxy|p=s',   "set http proxy, e.g.: http://10.40.14.34:80" ],
     );
 
     print($usage->text), exit if $options->help;
