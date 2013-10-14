@@ -1,7 +1,9 @@
 #!perl
-# Author: jackandking@gmail.com
-# DateTime: 2013-08-18 12:36:23
-# HomePage: https://github.com/jackandking/newpl
+# Author: Yingjie.Liu@thomsonreuters.com
+# DateTime: 2013-10-14 14:03:11
+# Generator: https://github.com/jackandking/newpl
+# Newpl Version: 0.2
+# Newpl ID: 10
 # Change Log:
 # 2013-10-10 2:05:14 PM add read_file so that upload can work; add proxy(opt -p) support.
 
@@ -41,6 +43,23 @@ my $world=<STDIN>;
 chomp($world);
 my $World='perl is case sensitive';
 print "Hello $world!\n";
+@],
+
+    '2' => 
+        ['Hash',
+q@
+# hash table
+my %src=(
+	"a"=>1,
+	"b"=>2,
+);
+foreach my $url (values %src){
+    print $url;
+    }
+foreach my $key (keys %src){
+	my $url=$src{$key};
+    print $url;
+    }
 @],
 
 );
@@ -193,27 +212,31 @@ sub main(){
     &list_sample if $options->list;
     &upload_file($options->upload) if $options->upload;
 
-    if (scalar(@ARGV)!= 1){
-        print "incorrect number of arguments, try -h\n";
-        exit;
+    if (!$options->test){
+        if (scalar(@ARGV)!= 1){
+            print "incorrect number of arguments, try -h\n";
+            exit;
+        }
+
+        $filename=$ARGV[0].'.pl';
+    }else{
+        $filename=undef;
     }
 
-    $filename=$ARGV[0].'.pl';
     if (!$options->overwrite and -e $filename){
         print("error: $filename already exist!\n");
         exit;
     }
 
     my $newpl_id=0;
-    if (!$options->test){
+    if (!$options->norecord){
         $newpl_id=&submit_record($options->samples);
     }
 
     &write_sample_to_file($newpl_id,
-                         #defined($options->samples)?$options->samples:'',
                          $options->samples,
-                         $options->test ? undef : $filename);
-    print "generate $filename successfully.\n" if !$options->quiet;
+                         $filename);
+    print "generate $filename successfully.\n" if !$options->quiet and defined($filename);
 }
 
 
