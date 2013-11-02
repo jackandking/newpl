@@ -62,6 +62,30 @@ foreach my $key (keys %src){
     }
 @],
 
+    'a' => 
+        ['int2ip',
+q*
+die("usage:$0 <IP integer>") if @ARGV < 1;
+print join '.',unpack "C4", pack "N", $ARGV[0];
+print "\n";
+*],
+
+    'b' => 
+        ['datetime',
+q*
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+my $dt=sprintf("%4d%02d%02d%02d%02d%02d",$year+1900,$mon+1,$mday,$hour,$min,$sec);
+print $dt;
+*],
+
+    'A' => 
+        ['RICMON: AHK, Thread, Win32, Log4perl',
+'http://newxx.sinaapp.com/newpl/13'],
+
+    'B' => 
+        ['jakdebug: package, signal',
+'http://newxx.sinaapp.com/newpl/19'],
+
 );
 
 sub write_sample_to_file{
@@ -92,6 +116,7 @@ sub write_sample_to_file{
         print $file "\n";
         print $file "=begin" if $options->comment;
         print $file '#'.$sample_blocks{$i}[0];
+        print $file "\n";
         print $file $sample_blocks{$i}[1];
         print $file "=end" if $options->comment;
         print $file "\n";

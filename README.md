@@ -24,6 +24,8 @@ Now install any module you can find.
     cpanm Module::Name
 Reference: http://www.cpan.org/modules/INSTALL.html
 
+To install modules manually for newpl.pl, refer to http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/Getopt-Long-Descriptive-0.096.tar.gz and http://search.cpan.org/CPAN/authors/id/D/DR/DROLSKY/Params-Validate-1.08.tar.gz
+
 
 Install newpl.pl
 ----------------
