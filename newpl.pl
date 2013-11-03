@@ -86,6 +86,26 @@ print $dt;
         ['jakdebug: package, signal',
 'http://newxx.sinaapp.com/newpl/19'],
 
+    'C' => 
+        ['check_db_per_elp: hash, list, csv',
+'http://newxx.sinaapp.com/newpl/26'],
+
+    'D' => 
+        ['check_db_per_elp2: excel',
+'http://newxx.sinaapp.com/newpl/28'],
+
+    'E' => 
+        ['show_md_from_idn: format print',
+'http://newxx.sinaapp.com/newpl/30'],
+
+    'F' => 
+        ['map_raq2gqs_st_group: file read',
+'http://newxx.sinaapp.com/newpl/31'],
+
+    'G' => 
+        ['parse_legacy_exls4sr: file write',
+'http://newxx.sinaapp.com/newpl/35'],
+
 );
 
 sub write_sample_to_file{
